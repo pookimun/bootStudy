@@ -3,10 +3,10 @@ package org.zerock.board.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Entity
-@Table(name = "tbl_memo") //DB명 지정
-@ToString //DB에 객체가 아닌 문자로 들어감
-@Getter
+@Entity //JPA를 통해 관리하게 되는 객체
+@Table(name = "tbl_memo") //entity를 어떠한 클래스로 생성할 것인지, 이 경우에는 DB명 지정
+@ToString //DB에 객체가 아닌 문자로 들어가므로
+@Getter //VO와 DB가 합쳐진 형태?
 @Builder //메서드.필드(값).필드(값).builder; (빌더 패턴), 아래 두 개의 생성자 필수
 @AllArgsConstructor
 @NoArgsConstructor

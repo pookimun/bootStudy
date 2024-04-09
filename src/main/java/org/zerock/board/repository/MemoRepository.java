@@ -20,52 +20,41 @@ public interface MemoRepository extends JpaRepository<Memo, Long> {
     // update 작업 : save(엔티티 객체)
     // delete 작업 : deleteById(키 타입),  delete(엔티티 객체)
 
-    // 쿼리 메서드 (메서드 명이 쿼리를 대체함)
-    // https://docs.spring.io/spring-data/jpa/docs/current-SNAPSHOT/reference/html/#jpa.query-methods
-    // https://docs.spring.io/spring-data/jpa/docs/current-SNAPSHOT/reference/html/#jpa.query-methods.query-creation
-
+    //쿼리 메서드는 메서드명 자체가 쿼리문으로 동작
+    //List<Memo> 리턴타입 -> 리스트 타입에 객체는 memo
     List<Memo> findByMnoBetweenOrderByMnoDesc(Long from, Long to);
-    // mno를 기준으로 between 구문을 사용하고 Orderby가 적용
-    // Long from, Long to 는 Between and 구문
-    // 리턴 타입은 List<Memo>
-
+        //매개값으로 받은 from ~ to까지 select를 진행, 리스트로 리턴하는 쿼리 메서드
+    
+    //Page<Memo> 리턴타입 -> 페이징 타입에 객체는 memo 
     Page<Memo> findByMnoBetween(Long from, Long to, Pageable pageable);
-    // 페이징 처리 추가용 메서드
+    //매개값으로 받은 from ~ to까지 select를 진행, 페이징 타입으로 리턴하는 쿼리 메서드
 
+    //10보다 작은 데이터 삭제
     void deleteMemoByMnoLessThan(Long num);
-    // 삭제용 쿼리 메서드
-    // LessThan 이하
 
-    //@Query 는 쿼리메서드의 단순함을 넘어서는 수동용 쿼리
-    //단 엔티티를 이용하기 때문에 대소문자 조심(JPQL)
-    @Query("select m from Memo m order by m.mno desc ")
-    List<Memo> getListDesc();
+    //@Query는 순수한 sql 쿼리문으로 작성, 테이블명이 아닌 엔티티명으로 작성해야
+    @Query("SELECT m FROM Memo m ORDER BY m.mno DESC")
+    List<Memo> getListDesc(); //내가 만든 메서드명
 
-    @Transactional
-    @Modifying
-    @Query("update Memo m set m.memoText = :memoText where m.mno = :mno ")
-    int updateMemoText(@Param("mno") long mno, @Param("memoText") String memoText);
-    // ?1, ?2 -> 1부터 시작하는 파라미터의 순서를 이용(pstmt)
-    // :XXX   ->  :파라미터 이름을 활용
-    // :#{  } -> 자바 빈 스타일
+    //1. (매개값이 있는) @Query문 : 값 (타입으로 받음)
+    @Query("UPDATE Memo m SET m.memoText = :memoText WHERE m.mno = :mno")
+    int updateMemotext(@Param("mno") Long mno, @Param("memoText") String memoText);
 
-    @Transactional
-    @Modifying
-    @Query("update Memo m set m.memoText = :#{#param.memoText} where m.mno = :#{#param.mno} ")
-    int updateMemoTextBean(@Param("param") Memo memo);
-    // :#{  } -> 자바 빈 스타일
+    //2. 매개값이 객체(빈)로 들어올 경우
+    @Query("UPDATE Memo m SET m.memoText =: #{memoBean.memoText} WHERE mno =: #{memoBean.mno}")
+    int updateMemoBean(@Param("memoBean") Memo memo);
 
-    @Query(value = "select m from Memo m where m.mno > :mno", countQuery = "select count(m) from Memo m where m.mno > : mno")
+    //@Query 메서드로 페이징 처리 해보기 -> 리턴 타입이 Page<Memo>
+    //countQuery: 페이징 처리 용도
+    @Query(value = "SELECT m FROM Memo m WHERE m.mno >: mno", countQuery = "SELECT count (m) FROM Memo m WHERE m.mno>: mno ")
     Page<Memo> getListWithQuery(Long mno, Pageable pageable);
-    // @Query를 이용하는 경우 Pageable 타입의 파라미터를 적용하면 페이징 처리와 정렬에 대한 부분을 생략할 수 있다.
-    // 리턴타입을 Page<엔티티>로 지정하면 count를 처리하는 쿼리를 적용한다.
 
-    @Query(value = "select m.mno, m.memoText, CURRENT_DATE from Memo  m WHERE m.mno > :mno", countQuery = "select count(m) from Memo m where m.mno > : mno")
+    //DB에 없는 값 처리 (e.g. 날짜)
+    @Query(value = "SELECT m.mno, m.memoText, CURRENT_DATE FROM Memo m WHERE m.mno >: mno", countQuery = "SELECT count (m) FROM Memo m WHERE m.mno>: mno")
+    //Object: 최상위 클래스로 모든 값 처리 가능
     Page<Object[]> getListWithQueryObject(Long mno, Pageable pageable);
-    // 페이지타입의 제네릭을 Object로 선언하면 적당한 엔티티 타입이 존재하지 않는 경우 리턴 타입으로 지정함
-    // CURRENT_DATE는 db에 있는 시간 정보를 가져옴
 
-    @Query(value = "select * from Memo where mno >0 ", nativeQuery = true)
+    //Native Sql 처리: DB용 복잡한 쿼리, 엔티티명이 아닌 테이블명으로 작성해야
+    @Query(value = "SELECT * FROM memo WHERE mno > 0", nativeQuery = true)
     List<Object[]> getNativeResult();
-    // 복잡한 sql 문을 모두 사용할 수 있음 nativeQuery = true (일반 sql문 사용) 단 엔티티 활용
 }
